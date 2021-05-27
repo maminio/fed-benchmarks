@@ -34,10 +34,14 @@ def add_args(parser):
     parser.add_argument('--epochs', type=int, default=5, metavar='EP',
                         help='how many epochs will be trained locally')
 
-    parser.add_argument('--client_num_in_total', type=int, default=2, metavar='NN',
+    parser.add_argument('--data_parallel', type=int, default=0,
+                        help='if distributed training')
+
+
+    parser.add_argument('--client_num_in_total', type=int, default=5, metavar='NN',
                         help='number of workers in a distributed cluster')
 
-    parser.add_argument('--client_num_per_round', type=int, default=2, metavar='NN',
+    parser.add_argument('--client_num_per_round', type=int, default=5, metavar='NN',
                         help='number of workers')
 
     parser.add_argument('--comm_round', type=int, default=10,
@@ -45,6 +49,13 @@ def add_args(parser):
 
     parser.add_argument('--frequency_of_the_test', type=int, default=1,
                         help='the frequency of the algorithms')
+
+    parser.add_argument('--frequency_of_train_acc_report', type=int, default=1,
+                        help='the frequency of training accuracy report')
+
+    parser.add_argument('--frequency_of_test_acc_report', type=int, default=1,
+                        help='the frequency of test accuracy report')
+
 
     parser.add_argument('--gpu', type=int, default=0,
                         help='gpu')

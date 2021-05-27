@@ -57,35 +57,35 @@ class FedAvgAPI(object):
                                                    self.args.client_num_per_round)
             logging.info("client_indexes = " + str(client_indexes))
 
-            with concurrent.futures.ProcessPoolExecutor() as executor:
-                results = []
-                for idx, client in enumerate(self.client_list):
-                    # update dataset
-                    client_idx = client_indexes[idx]
-                    client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
-                                                self.test_data_local_dict[client_idx],
-                                                self.train_data_local_num_dict[client_idx])
+            # with concurrent.futures.ProcessPoolExecutor() as executor:
+            #     results = []
+            #     for idx, client in enumerate(self.client_list):
+            #         # update dataset
+            #         client_idx = client_indexes[idx]
+            #         client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
+            #                                     self.test_data_local_dict[client_idx],
+            #                                     self.train_data_local_num_dict[client_idx])
 
-                    # train on new dataset
-                    results.append(executor.submit(self.parallerl_client_train, client, copy.deepcopy(w_global)))
-                    # w = client.train(copy.deepcopy(w_global))
-                    # self.logger.info("local weights = " + str(w))
-                for f in concurrent.futures.as_completed(results):
-                    w_locals.append((f.result()[0].get_sample_number(), copy.deepcopy(f.result()[1])))
+            #         # train on new dataset
+            #         results.append(executor.submit(self.parallerl_client_train, client, copy.deepcopy(w_global)))
+            #         # w = client.train(copy.deepcopy(w_global))
+            #         # self.logger.info("local weights = " + str(w))
+            #     for f in concurrent.futures.as_completed(results):
+            #         w_locals.append((f.result()[0].get_sample_number(), copy.deepcopy(f.result()[1])))
 
 
 
-            # for idx, client in enumerate(self.client_list):
-            #     # update dataset
-            #     client_idx = client_indexes[idx]
-            #     client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
-            #                                 self.test_data_local_dict[client_idx],
-            #                                 self.train_data_local_num_dict[client_idx])
+            for idx, client in enumerate(self.client_list):
+                # update dataset
+                client_idx = client_indexes[idx]
+                client.update_local_dataset(client_idx, self.train_data_local_dict[client_idx],
+                                            self.test_data_local_dict[client_idx],
+                                            self.train_data_local_num_dict[client_idx])
 
-            #     # train on new dataset
-            #     w = client.train(copy.deepcopy(w_global))
-            #     # self.logger.info("local weights = " + str(w))
-            #     w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
+                # train on new dataset
+                w = client.train(copy.deepcopy(w_global))
+                # self.logger.info("local weights = " + str(w))
+                w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
 
             # update global weights
             w_global = self._aggregate(w_locals)

@@ -33,21 +33,25 @@ from data_preprocessing.data_loader import load_data
 from models.resnet import resnet56
 from models.trainer import ClassificationModelTrainer
 from FedAvgApi import FedAvgAPI
+from models.centralized_trainer import CentralizedTrainer
 
 if __name__ == "__main__":
+
+    
     logging.basicConfig()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     torch.multiprocessing.set_start_method('spawn')
     parser = add_args(argparse.ArgumentParser(description='FedAvg'))
     args = parser.parse_args()
+    args.rank = 0
     logger.info(args)
     device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
     logger.info(device)
-
+    
     wandb.init(
         project="fedml",
-        name="FedAVG-r-v2" + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
+        name="Centralized" + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
         config=args
     )
 
@@ -63,12 +67,10 @@ if __name__ == "__main__":
     dataset = load_data(args, args.dataset)
     model = resnet56(class_num=dataset[7])
     
-    model_trainer = ClassificationModelTrainer(model) 
-
     logging.info(model)
 
-    fedavgAPI = FedAvgAPI(dataset, device, args, model_trainer)
-    fedavgAPI.train()
+    single_trainer = CentralizedTrainer(dataset, model, device, args)
+    single_trainer.train()
 
     print("CHECKKING ")
 
