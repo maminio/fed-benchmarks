@@ -30,7 +30,7 @@ import wandb
 # import concurrent.futures
 from args_parser import add_args
 from data_preprocessing.data_loader import load_data
-from models.resnet import resnet56
+from models.resnet import resnet56, resnet18
 from models.trainer import ClassificationModelTrainer
 from FedAvgApi import FedAvgAPI
 
@@ -41,13 +41,14 @@ if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn')
     parser = add_args(argparse.ArgumentParser(description='FedAvg'))
     args = parser.parse_args()
+    args.client_num_per_round = args.client_num_in_total
     logger.info(args)
     device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
     logger.info(device)
 
     wandb.init(
         project="fedml",
-        name="FedAVG-r-v2" + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
+        name=args.run_name + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
         config=args
     )
 
@@ -61,7 +62,9 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
 
     dataset = load_data(args, args.dataset)
-    model = resnet56(class_num=dataset[7])
+    # model = resnet56(class_num=dataset[7])
+    model = resnet18(class_num=dataset[7])
+    
     
     model_trainer = ClassificationModelTrainer(model) 
 

@@ -222,6 +222,31 @@ def resnet56(class_num, pretrained=False, path=None, **kwargs):
     return model
 
 
+
+
+def resnet18(class_num, pretrained=False, path=None, **kwargs):
+    """
+    Constructs a ResNet-18 model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained.
+    """
+    model = ResNet(Bottleneck, [2, 2, 2], class_num, **kwargs)
+    if pretrained:
+        checkpoint = torch.load(path)
+        state_dict = checkpoint['state_dict']
+
+        from collections import OrderedDict
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            # name = k[7:]  # remove 'module.' of dataparallel
+            name = k.replace("module.", "")
+            new_state_dict[name] = v
+
+        model.load_state_dict(new_state_dict)
+    return model
+
+
 def resnet110(class_num, pretrained=False, path=None, **kwargs):
     """
     Constructs a ResNet-110 model.

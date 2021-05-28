@@ -4,8 +4,12 @@ def add_args(parser):
     parser : argparse.ArgumentParser
     return a parser added with args required by fit
     """
+
+    parser.add_argument('--run_name', type=str, default='FedAVG-r-v2', metavar='RN',
+                        help='Wandb run name')
+
     # Training settings
-    parser.add_argument('--model', type=str, default='resnet56', metavar='N',
+    parser.add_argument('--model', type=str, default='resnet18', metavar='N',
                         help='neural network used in training')
 
     parser.add_argument('--dataset', type=str, default='cifar10', metavar='N',
