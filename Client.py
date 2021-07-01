@@ -1,6 +1,6 @@
 import logging
 import torch
-import syft as sy
+# import syft as sy
 
 class Client:
 
