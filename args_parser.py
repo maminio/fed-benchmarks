@@ -68,4 +68,7 @@ def add_args(parser):
 
     parser.add_argument('--ci', type=int, default=0,
                         help='CI')
+
+    parser.add_argument('--config_id', type=int, default=0,
+                        help='CoI')
     return parser

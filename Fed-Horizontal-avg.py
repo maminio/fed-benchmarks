@@ -43,6 +43,25 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.client_num_per_round = args.client_num_in_total
     logger.info(args)
+
+    # Read config file and append configs to args parser
+    df = pd.read_csv('./all_runs_config.csv')
+    iid_filter = (df['partition_method'] == 0.0)
+    non_iid_filter = (df['partition_method'] == 1.0)
+    df.loc[iid_filter, 'partition_method'] = 'iid'
+    df.loc[non_iid_filter, 'partition_method'] = 'non-iid'
+
+    partition_method, partition_alpha, batch_size, lr, wd, epochs, client_num_in_total, comm_round = list(df.iloc[args.config_id])
+    args.partition_method = partition_method
+    args.partition_alpha = partition_alpha
+    args.batch_size = batch_size
+    args.lr = lr
+    args.wd = wd
+    args.epochs = epochs
+    args.client_num_in_total = client_num_in_total
+    args.comm_round = comm_round
+
+
     device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
     logger.info(device)
 
@@ -70,9 +89,9 @@ if __name__ == "__main__":
 
     logging.info(model)
 
-    # fedavgAPI = FedAvgAPI(dataset, device, args, model_trainer)
-    # fedavgAPI.train()
+    fedavgAPI = FedAvgAPI(dataset, device, args, model_trainer)
+    fedavgAPI.train()
 
-    print("CHECKKING ")
+    print(" DONE ")
 
 
