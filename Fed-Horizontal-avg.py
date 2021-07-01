@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     wandb.init(
         project="fedml",
-        name=args.run_name + str(args.comm_round) + "-e" + str(args.epochs) + "-lr" + str(args.lr),
+        name=args.run_name,
         config=args
     )
 
