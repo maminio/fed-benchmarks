@@ -32,6 +32,8 @@ def add_args(parser):
 
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.001)')
+    parser.add_argument('--noise_rate', type=float, default=0.0, metavar='NR',
+                        help='Corrupt rate of samples')
 
     parser.add_argument('--wd', help='weight decay parameter;', type=float, default=0.001)
 

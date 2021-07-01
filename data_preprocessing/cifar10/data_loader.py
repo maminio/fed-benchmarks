@@ -97,6 +97,34 @@ def _data_transforms_cifar10():
 
     return train_transform, valid_transform
 
+def corrupt_label(y_train, noise_rate):
+    """Corrupts training labels.
+
+    Args:
+    y_train: training labels
+    noise_rate: input noise ratio
+
+    Returns:
+    corrupted_y_train: corrupted training labels
+    noise_idx: corrupted index
+    """
+
+    y_set = list(set(y_train))
+
+    # Sets noise_idx
+    temp_idx = np.random.permutation(len(y_train))
+    noise_idx = temp_idx[:int(len(y_train) * noise_rate)]
+
+    # Corrupts label
+    corrupted_y_train = y_train[:]
+
+    for itt in noise_idx:
+        temp_y_set = y_set[:]
+        del temp_y_set[y_train[itt]]
+        rand_idx = np.random.randint(len(y_set) - 1)
+        corrupted_y_train[itt] = temp_y_set[rand_idx]
+
+    return corrupted_y_train, noise_idx
 
 def load_cifar10_data(datadir):
     train_transform, test_transform = _data_transforms_cifar10()
@@ -152,8 +180,8 @@ def partition_data(dataset, datadir, partition, n_nets, alpha):
 
 
 # for centralized training
-def get_dataloader(dataset, datadir, train_bs, test_bs, dataidxs=None):
-    return get_dataloader_CIFAR10(datadir, train_bs, test_bs, dataidxs)
+def get_dataloader(dataset, datadir, train_bs, test_bs, dataidxs=None, noise_rate=0):
+    return get_dataloader_CIFAR10(datadir, train_bs, test_bs, dataidxs, noise_rate)
 
 
 # for local devices
@@ -161,13 +189,13 @@ def get_dataloader_test(dataset, datadir, train_bs, test_bs, dataidxs_train, dat
     return get_dataloader_test_CIFAR10(datadir, train_bs, test_bs, dataidxs_train, dataidxs_test)
 
 
-def get_dataloader_CIFAR10(datadir, train_bs, test_bs, dataidxs=None):
+def get_dataloader_CIFAR10(datadir, train_bs, test_bs, dataidxs=None, noise_rate=0):
     dl_obj = CIFAR10_truncated
 
     transform_train, transform_test = _data_transforms_cifar10()
 
-    train_ds = dl_obj(datadir, dataidxs=dataidxs, train=True, transform=transform_train, download=True)
-    test_ds = dl_obj(datadir, train=False, transform=transform_test, download=True)
+    train_ds = dl_obj(datadir, dataidxs=dataidxs, train=True, transform=transform_train, download=True, noise_rate=noise_rate)
+    test_ds = dl_obj(datadir, train=False, transform=transform_test, download=True, noise_rate=noise_rate)
 
     train_dl = data.DataLoader(dataset=train_ds, batch_size=train_bs, shuffle=True, drop_last=True)
     test_dl = data.DataLoader(dataset=test_ds, batch_size=test_bs, shuffle=False, drop_last=True)
@@ -223,7 +251,7 @@ def load_partition_data_distributed_cifar10(process_id, dataset, data_dir, parti
     return train_data_num, train_data_global, test_data_global, local_data_num, train_data_local, test_data_local, class_num
 
 
-def load_partition_data_cifar10(dataset, data_dir, partition_method, partition_alpha, client_number, batch_size):
+def load_partition_data_cifar10(dataset, data_dir, partition_method, partition_alpha, client_number, batch_size, noise_rate=0):
     X_train, y_train, X_test, y_test, net_dataidx_map, traindata_cls_counts = partition_data(dataset,
                                                                                              data_dir,
                                                                                              partition_method,
@@ -251,7 +279,7 @@ def load_partition_data_cifar10(dataset, data_dir, partition_method, partition_a
 
         # training batch size = 64; algorithms batch size = 32
         train_data_local, test_data_local = get_dataloader(dataset, data_dir, batch_size, batch_size,
-                                                 dataidxs)
+                                                 dataidxs, noise_rate)
         logging.info("client_idx = %d, batch_num_train_local = %d, batch_num_test_local = %d" % (
             client_idx, len(train_data_local), len(test_data_local)))
         train_data_local_dict[client_idx] = train_data_local

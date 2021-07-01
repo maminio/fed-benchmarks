@@ -7,7 +7,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset
 ############################
 # Modules
-import syft as sy
+# import syft as sy
 import copy
 import numpy as np
 import pandas as pd
@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     logging.info(model)
 
-    fedavgAPI = FedAvgAPI(dataset, device, args, model_trainer)
-    fedavgAPI.train()
+    # fedavgAPI = FedAvgAPI(dataset, device, args, model_trainer)
+    # fedavgAPI.train()
 
     print("CHECKKING ")
 
