@@ -6,7 +6,7 @@ let "run_1 = (2 * $GROUP) + 1"
 bash $HOME/fed-benchmarks/aggrigator.sh "$run_0" &
 pids[1]=$!
 
-bash $HOME/fed-benchmarks/aggrigator.sh "$run_0" &
+bash $HOME/fed-benchmarks/aggrigator.sh "$run_1" &
 pids[2]=$!
 
 
