@@ -178,7 +178,7 @@ if __name__ == "__main__":
 
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_Alice_04',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_04',
         config=args
     )
 
