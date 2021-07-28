@@ -9,7 +9,6 @@ from torchvision import models
 import torch.optim as optim
 from torch.autograd import Variable
 from uuid import uuid4
-import syft as sy
 from matplotlib import pyplot as plt
 import pandas as pd
 import sklearn
@@ -175,7 +174,7 @@ if __name__ == "__main__":
 
     device = torch.device("cuda:" + str(args.gpu) if torch.cuda.is_available() else "cpu")
     logger.info(device)
-
+    print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
         name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_04',
