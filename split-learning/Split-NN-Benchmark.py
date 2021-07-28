@@ -1,11 +1,8 @@
 import torch
-import torchvision
-import torchvision.transforms as transforms
 
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import models
 import torch.optim as optim
 from torch.autograd import Variable
 from uuid import uuid4
