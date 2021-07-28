@@ -177,7 +177,7 @@ if __name__ == "__main__":
     print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_04',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_05',
         config=args
     )
 
