@@ -287,7 +287,7 @@ if __name__ == "__main__":
                             lin_layer_dropouts=[0.001,0.01], config=config).to(device)
         dataloader = DataLoader(dataset, batchsize, shuffle=False, num_workers=1)
         iter_dataloader = iter(DataLoader(dataset, batchsize, shuffle=False, num_workers=1))
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
+        client_optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
         
         
         client_test_data = df_test[list(raw_df.columns)]
@@ -300,7 +300,7 @@ if __name__ == "__main__":
             'dataloader': dataloader,
             'iter_dataloader': iter_dataloader,
             'model': model,
-            'optimizer': optimizer,
+            'optimizer': client_optimizer,
             'features': columns,
             'order': i,
             'cat_cols': cat_cols,
@@ -380,9 +380,7 @@ if __name__ == "__main__":
             
             labels = training_labels[batch_pointer * batchsize:(batch_pointer +1) * batchsize]
             labels = labels.to(device)
-            loss = criterion(outputs, labels)
-            
-            
+            loss = criterion(outputs, labels)            
             loss.backward()
             optimizer.step()
             prev_pointer = 0
@@ -394,7 +392,7 @@ if __name__ == "__main__":
                 prev_pointer += nn_partition
                 client.get('optimizer').step()
                 
-            print("\r Epoch: {} , Loss {}".format(epoch, loss.item()), end="")
+            # print("\r Epoch: {} , Loss {}".format(epoch, loss.item()), end="")
             # Calculate test accuracy after each epoch
         accuracy = check_accuracy(clients, test_dataloader, server_model)
         wandb.log({"Test/Acc": accuracy, "epoch": epoch})
