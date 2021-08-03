@@ -12,9 +12,23 @@ GROUP=$1
 
 
 # Split learning
-for i in {0..100}
+# for i in {0..100}
+# do
+#     let "config_id = $i"
+#     echo " This is the i: $i run for group: $GROUP ==> run: $config_id"
+#     # cd $HOME/fed-benchmarks/split-learning && python ./Split-NN-Benchmark.py --dataset_index_id $GROUP --config_id $config_id
+#     cd $HOME/jupyter/openml-fed/Experiments/split-learning && python ./Split-NN-Benchmark.py --dataset_index_id $GROUP --config_id $config_id
+    
+# done
+
+
+
+# Split learning Controlled
+for i in {0..25}
 do
-    let "config_id = $i"
+    let "config_id = (25 * $GROUP) + $i"
     echo " This is the i: $i run for group: $GROUP ==> run: $config_id"
-    cd $HOME/fed-benchmarks/split-learning && python ./Split-NN-Benchmark.py --dataset_index_id $GROUP --config_id $config_id
+    # cd $HOME/fed-benchmarks/split-learning && python ./Split-NN-Benchmark.py --dataset_index_id $GROUP --config_id $config_id
+    cd $HOME/jupyter/openml-fed/Experiments/split-learning && python ./Controlled-Split-NN-Benchmark.py  --config_id $config_id
+    
 done
