@@ -131,7 +131,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Read config file and append configs to args parser
-    df = pd.read_csv('./seed_variant_split_nn_all_runs_config.csv')
+    df = pd.read_csv('./run-configs/cut_layer_seed_variant_split_nn_all_runs_config.csv')
 
     partition_alpha, batch_size, lr, wd, epochs, client_num_in_total, cut_layer, num_ln, agg_type, random_seed = list(df.iloc[args.config_id])
     args.partition_alpha = partition_alpha
@@ -145,6 +145,7 @@ if __name__ == "__main__":
     args.random_seed = int(random_seed)
     num_clients = args.client_num_in_total
     args.agg_type = 'stack' if agg_type == 0 else 'average'
+    args.desc = 'All hyper parameters are constant except cut_layer. Running each experiment with 10 different seeds.'
 
     # dataset_index_id = int(args.dataset_index_id)
     # (_, dataset_id) = cc18[dataset_index_id]
@@ -173,7 +174,7 @@ if __name__ == "__main__":
     print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_07',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_09',
         config=args
     )
 
