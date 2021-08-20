@@ -32,22 +32,16 @@ from sklearn import datasets
 
 # num_features, datasetid
 cc18 = [
-#     (3073, 40927),
- (1777, 4134),
- (1559, 40978),
-#  (1025, 40923),
-#  (857, 1468),
-#  (785, 40996),
-#  (785, 554),
- (618, 300),
- (562, 1478),
-#  (501, 1485)
-(181, 40670),
-(119, 1486),
-(82, 40966),
-(73, 1487),
-(65, 28),
-(62, 46)
+    (1777, 4134),
+    (1559, 40978),
+    (618, 300),
+    (562, 1478),
+    (181, 40670),
+    (119, 1486),
+    (82, 40966),
+    (73, 1487),
+    (65, 28),
+    (62, 46)
  ]
 def check_accuracy(clients, test_dataloader, server_model):
     with torch.no_grad():
@@ -137,9 +131,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Read config file and append configs to args parser
-    df = pd.read_csv('./split_nn_all_runs_config.csv')
+    df = pd.read_csv('./run-configs/run_all_variant_split_nn_all_runs_config.csv')
 
-    partition_alpha, batch_size, lr, wd, epochs, client_num_in_total, cut_layer, num_ln = list(df.iloc[args.config_id])
+    partition_alpha,batch_size,lr,wd,epochs,client_num_in_total,cut_layer,num_ln,agg_type,ln_upscale,random_seed,db_id = list(df.iloc[args.config_id])
     args.partition_alpha = partition_alpha
     args.batch_size = int(batch_size)
     args.lr = lr
@@ -148,10 +142,14 @@ if __name__ == "__main__":
     args.client_num_in_total = int(client_num_in_total)
     args.cut_layer = int(cut_layer)
     args.num_ln = int(num_ln)
-    
+    args.random_seed = int(random_seed)
     num_clients = args.client_num_in_total
+    args.agg_type = 'stack' if int(agg_type) == 0 else 'average'
+    args.ln_upscale = int(ln_upscale)
 
-    dataset_index_id = int(args.dataset_index_id)
+    args.desc = 'All hyperparameters are sampled and non are fixed except for epoch.'
+    args.dataset_index_id = int(db_id)
+    dataset_index_id = args.dataset_index_id
     (_, dataset_id) = cc18[dataset_index_id]
     args.dataset_id = dataset_id
     print(" dataset_id ", dataset_id)
@@ -161,9 +159,11 @@ if __name__ == "__main__":
     config = { "cut_layer": args.cut_layer }
 
     num_linear_layers = args.num_ln
-    ln_upscale_ce = 3
+    ln_upscale_ce = args.ln_upscale
     alpha = args.partition_alpha
-    server_nn_type = 'stack' # stack, average
+    
+
+    server_nn_type = args.agg_type #'stack' # stack, average
 
 
 
@@ -174,14 +174,14 @@ if __name__ == "__main__":
     print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_05',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_10',
         config=args
     )
 
-    random.seed(0)
-    np.random.seed(0)
-    torch.manual_seed(0)
-    torch.cuda.manual_seed_all(0)
+    random.seed(args.random_seed)
+    np.random.seed(args.random_seed)
+    torch.manual_seed(args.random_seed)
+    torch.cuda.manual_seed_all(args.random_seed)
     torch.backends.cudnn.deterministic = True
 
 
@@ -281,7 +281,7 @@ if __name__ == "__main__":
         
         model = FeedForwardNN(emb_dims, no_of_cont=len(cont_columns), lin_layer_sizes=np.repeat(ln_dim, num_linear_layers),
                             output_size=n_output_classes, emb_dropout=0.04,
-                            lin_layer_dropouts=[0.001,0.01], config=config).to(device)
+                            lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
         dataloader = DataLoader(dataset, batchsize, shuffle=False, num_workers=1)
         iter_dataloader = iter(DataLoader(dataset, batchsize, shuffle=False, num_workers=1))
         client_optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
@@ -314,7 +314,7 @@ if __name__ == "__main__":
     ln_dim = len(columns) * ln_upscale_ce
     client_sample_model = FeedForwardNN(emb_dims, no_of_cont=len(cont_columns), lin_layer_sizes=np.repeat(ln_dim, num_linear_layers),
                         output_size=n_output_classes, emb_dropout=0.04,
-                        lin_layer_dropouts=[0.001,0.01], config=config).to(device)
+                        lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
 
     # Test data prerequisits
 
@@ -335,12 +335,12 @@ if __name__ == "__main__":
     if(server_nn_type == 'stack'):
         server_model = ServerFeedForwardNN(input_size=n_features, lin_layer_sizes=np.repeat(ln_size, num_linear_layers),
                                 output_size=n_output_classes, emb_dropout=0.08,
-                                lin_layer_dropouts=[0.01,0.01], config=config).to(device)
+                                lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
     else:
         ln_size = client.get('ln_dim')
         server_model = ServerFeedForwardNN(input_size=n_features, lin_layer_sizes=np.repeat(ln_size, num_linear_layers),
                             output_size=n_output_classes, emb_dropout=0.08,
-                            lin_layer_dropouts=[0.01,0.01], config=config).to(device)
+                            lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
 
 
     #  Training
