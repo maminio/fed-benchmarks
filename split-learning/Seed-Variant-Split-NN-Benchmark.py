@@ -139,7 +139,7 @@ if __name__ == "__main__":
     args.lr = lr
     args.wd = wd
     args.epochs = int(epochs)
-    args.client_num_in_total = int(client_num_in_total)
+    args.client_num_in_total = 5
     args.cut_layer = int(cut_layer)
     args.num_ln = int(num_ln)
     args.random_seed = int(random_seed)
@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     # dataset_index_id = int(args.dataset_index_id)
     # (_, dataset_id) = cc18[dataset_index_id]
-    dataset_id=40966
+    dataset_id=40670
 
     args.dataset_id = dataset_id
     print(" dataset_id ", dataset_id)
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     config = { "cut_layer": args.cut_layer }
 
     num_linear_layers = args.num_ln
-    ln_upscale_ce = 2
+    ln_upscale_ce = 3
     alpha = args.partition_alpha
     
 
@@ -281,7 +281,7 @@ if __name__ == "__main__":
         
         model = FeedForwardNN(emb_dims, no_of_cont=len(cont_columns), lin_layer_sizes=np.repeat(ln_dim, num_linear_layers),
                             output_size=n_output_classes, emb_dropout=0.04,
-                            lin_layer_dropouts=[0.001,0.01], config=config).to(device)
+                            lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
         dataloader = DataLoader(dataset, batchsize, shuffle=False, num_workers=1)
         iter_dataloader = iter(DataLoader(dataset, batchsize, shuffle=False, num_workers=1))
         client_optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
@@ -314,7 +314,7 @@ if __name__ == "__main__":
     ln_dim = len(columns) * ln_upscale_ce
     client_sample_model = FeedForwardNN(emb_dims, no_of_cont=len(cont_columns), lin_layer_sizes=np.repeat(ln_dim, num_linear_layers),
                         output_size=n_output_classes, emb_dropout=0.04,
-                        lin_layer_dropouts=[0.001,0.01], config=config).to(device)
+                        lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
 
     # Test data prerequisits
 
@@ -335,12 +335,12 @@ if __name__ == "__main__":
     if(server_nn_type == 'stack'):
         server_model = ServerFeedForwardNN(input_size=n_features, lin_layer_sizes=np.repeat(ln_size, num_linear_layers),
                                 output_size=n_output_classes, emb_dropout=0.08,
-                                lin_layer_dropouts=[0.01,0.01], config=config).to(device)
+                                lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
     else:
         ln_size = client.get('ln_dim')
         server_model = ServerFeedForwardNN(input_size=n_features, lin_layer_sizes=np.repeat(ln_size, num_linear_layers),
                             output_size=n_output_classes, emb_dropout=0.08,
-                            lin_layer_dropouts=[0.01,0.01], config=config).to(device)
+                            lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
 
 
     #  Training
