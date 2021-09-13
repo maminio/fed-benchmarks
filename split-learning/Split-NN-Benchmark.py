@@ -32,13 +32,14 @@ from sklearn import datasets
 
 # num_features, datasetid
 cc18 = [
+    (82, 40966),
     (1777, 4134),
     # (1559, 40978),
     # (618, 300),
     (562, 1478),
     # (181, 40670),
     # (119, 1486),
-    (82, 40966),
+    # (82, 40966),
     # (73, 1487),
     (65, 28),
     (62, 46)
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Read config file and append configs to args parser
-    df = pd.read_csv('./run-configs/SL_ALL_FIXED_NCLIENTS_PA.csv')
+    df = pd.read_csv('./run-configs/SL_ALL_FIXED_CUTLAYER_EPOCH.csv')
 
     partition_alpha,batch_size,lr,wd,epochs,client_num_in_total,cut_layer,num_ln,agg_type,ln_upscale,random_seed,db_id, config_id = list(df.iloc[args.config_id])
     args.config_id = config_id
@@ -148,7 +149,7 @@ if __name__ == "__main__":
     args.agg_type = 'stack' if int(agg_type) == 0 else 'average'
     args.ln_upscale = int(ln_upscale)
 
-    args.desc = 'All hyperparameters are fixed except no. clients and partition alpha (On five datasets. 500 Runs).'
+    args.desc = 'All hyperparameters are fixed except cut layer and local epoch. None even dist of data. One dataset (160).'
     args.dataset_index_id = int(db_id)
     dataset_index_id = args.dataset_index_id
     (_, dataset_id) = cc18[dataset_index_id]
@@ -175,7 +176,7 @@ if __name__ == "__main__":
     print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_12',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_14',
         config=args
     )
 
@@ -349,6 +350,7 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(client_sample_model.parameters(), lr=args.lr, weight_decay=args.wd)
     activations = []
+    print('========= 01 ===========')
     for epoch in range(no_of_epochs):
         for batch_pointer in range(math.ceil(n_train_samples/batchsize)):        
             activations = []
