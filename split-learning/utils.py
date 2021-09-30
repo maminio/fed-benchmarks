@@ -170,8 +170,10 @@ class FeedForwardNN(nn.Module):
 
         for i, (lin_layer, dropout_layer, bn_layer) in\
             enumerate(zip(self.lin_layers, self.droput_layers, self.bn_layers)):
+            # print(" CLIENT MODEL CUT LAYER: ", self.cut_layer, 'Layer: ', i)
             if i > self.cut_layer: 
                 break
+            # print(" PROCESSING MODEL CUT LAYER: ", self.cut_layer, 'Layer: ', i)
             x = F.relu(lin_layer(x))
             x = bn_layer(x)
             x = dropout_layer(x)
@@ -200,7 +202,7 @@ class ServerFeedForwardNN(nn.Module):
          nn.ModuleList([first_lin_layer] +\
               [nn.Linear(lin_layer_sizes[i], lin_layer_sizes[i + 1])
                for i in range(len(lin_layer_sizes) - 1)])
-
+        # print('SERVER LINEAR LAYERS: ', self.lin_layers)
         for lin_layer in self.lin_layers:
             nn.init.kaiming_normal_(lin_layer.weight.data)
 
@@ -222,11 +224,13 @@ class ServerFeedForwardNN(nn.Module):
     def forward(self, x):
         for i, (lin_layer, dropout_layer, bn_layer) in\
             enumerate(zip(self.lin_layers, self.droput_layers, self.bn_layers)):
-            if i < self.cut_layer: 
+            if i <= self.cut_layer: 
                 continue
             x = F.relu(lin_layer(x))
             x = bn_layer(x)
             x = dropout_layer(x)
 
         x = self.output_layer(x)
-        return torch.sigmoid(x)
+        return x
+        # return torch.sigmoid(x)
+    

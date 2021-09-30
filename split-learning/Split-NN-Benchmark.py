@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import sklearn
 from sklearn.preprocessing import LabelEncoder
+from sklearn.datasets import make_classification
 from torch.utils.data import Dataset, DataLoader
 from utils import TabularDataset, ServerFeedForwardNN, FeedForwardNN
 import math
@@ -38,7 +39,7 @@ cc18 = [
     # (618, 300),
     (562, 1478),
     # (181, 40670),
-    # (119, 1486),
+    (119, 1486),
     # (82, 40966),
     # (73, 1487),
     (65, 28),
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Read config file and append configs to args parser
-    df = pd.read_csv('./run-configs/SL_ALL_FIXED_CUTLAYER_EPOCH.csv')
+    df = pd.read_csv('./run-configs/SL_ALL_FIXED_CUTLAYER_PA.csv')
 
     partition_alpha,batch_size,lr,wd,epochs,client_num_in_total,cut_layer,num_ln,agg_type,ln_upscale,random_seed,db_id,config_id = list(df.iloc[args.config_id])
     args.config_id = config_id
@@ -149,7 +150,7 @@ if __name__ == "__main__":
     args.agg_type = 'stack' if int(agg_type) == 0 else 'average'
     args.ln_upscale = int(ln_upscale)
 
-    args.desc = 'All hyperparameters are fixed except cut layer and local epoch. None even dist of data. One dataset (160).'
+    args.desc = 'All hyperparameters are fixed except cut layer and partition alpha. One dataset (80 run).'
     args.dataset_index_id = int(db_id)
     dataset_index_id = args.dataset_index_id
     (_, dataset_id) = cc18[dataset_index_id]
@@ -176,7 +177,7 @@ if __name__ == "__main__":
     print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_14',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_15',
         config=args
     )
 
@@ -227,7 +228,7 @@ if __name__ == "__main__":
     df = df.iloc[math.floor(n_train_samples * 0.2):]
 
     n_train_samples, n_features = df.shape
-
+    n_test_samples, _ = df_test.shape
 
 
     # Pre-proccess and initlize test and train datasets
@@ -260,7 +261,7 @@ if __name__ == "__main__":
     for i, raw_df in enumerate(distributed_dataframes):
         raw_df = raw_df.copy()
         columns = raw_df.columns
-        cat_cols=[cat_col for cat_col in columns if cat_col in categorical_features and cat_col not in ignore_categorical]
+        cat_cols =[cat_col for cat_col in columns if cat_col in categorical_features and cat_col not in ignore_categorical]
         
         label_encoders = {}
         for cat_col in cat_cols:
@@ -269,30 +270,30 @@ if __name__ == "__main__":
 
         dataset = TabularDataset(data=raw_df, cat_cols=cat_cols, is_client=True)
 
-        # Using complete_df here bacause we must set emb layer for all types of a feature.     
+    #     # Using complete_df here bacause we must set emb layer for all types of a feature.     
         cat_dims = [int(complete_df[col].nunique()) for col in cat_cols]
         emb_dims = [(x, min(50, (x + 1) // 2)) for x in cat_dims]
-        
+
         cont_columns = [column for column in columns if column not in cat_cols]
-        
-        
+
+
         if(server_nn_type == 'stack'):
             ln_dim = len(columns) * ln_upscale_ce
         else:
             ln_dim = len(df.columns)
-        
+
         model = FeedForwardNN(emb_dims, no_of_cont=len(cont_columns), lin_layer_sizes=np.repeat(ln_dim, num_linear_layers),
                             output_size=n_output_classes, emb_dropout=0.04,
                             lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
         dataloader = DataLoader(dataset, batchsize, shuffle=False, num_workers=1)
         iter_dataloader = iter(DataLoader(dataset, batchsize, shuffle=False, num_workers=1))
         client_optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
-        
-        
+
+
         client_test_data = df_test[list(raw_df.columns)]
         client_test_dataset = TabularDataset(data=client_test_data, cat_cols=cat_cols, is_client=True)
         client_test_dataloader = DataLoader(client_test_dataset, batchsize, shuffle=False, num_workers=1)
-            
+
         clients['client_' + str(i)] = {
             'raw_df': raw_df,
             'dataset': dataset,
@@ -305,18 +306,10 @@ if __name__ == "__main__":
             'cat_cols': cat_cols,
             'cont_columns': cont_columns,
             'test_data_loader': client_test_dataloader,
-            'ln_dim': ln_dim
+            'ln_dim': ln_dim,
+            'activation': None
         }
 
-
-    columns = df.columns
-    cat_cols=[cat_col for cat_col in columns if cat_col in categorical_features]
-    cat_dims = [int(df[col].nunique()) for col in cat_cols]
-    emb_dims = [(x, min(50, (x + 1) // 2)) for x in cat_dims]
-    ln_dim = len(columns) * ln_upscale_ce
-    client_sample_model = FeedForwardNN(emb_dims, no_of_cont=len(cont_columns), lin_layer_sizes=np.repeat(ln_dim, num_linear_layers),
-                        output_size=n_output_classes, emb_dropout=0.04,
-                        lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
 
     # Test data prerequisits
 
@@ -332,59 +325,67 @@ if __name__ == "__main__":
     for _, client in clients.items():
         ln_size += client.get('ln_dim')
         client_net_ln_map.append(client.get('ln_dim'))
-        
+
     # ln_size = num_clients * 100
     if(server_nn_type == 'stack'):
         server_model = ServerFeedForwardNN(input_size=n_features, lin_layer_sizes=np.repeat(ln_size, num_linear_layers),
-                                output_size=n_output_classes, emb_dropout=0.08,
+                                output_size=n_output_classes, emb_dropout=0.04,
                                 lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
     else:
         ln_size = client.get('ln_dim')
         server_model = ServerFeedForwardNN(input_size=n_features, lin_layer_sizes=np.repeat(ln_size, num_linear_layers),
-                            output_size=n_output_classes, emb_dropout=0.08,
+                            output_size=n_output_classes, emb_dropout=0.001,
                             lin_layer_dropouts=np.repeat(0.001, num_linear_layers), config=config).to(device)
+
 
 
     #  Training
     no_of_epochs = args.epochs
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(client_sample_model.parameters(), lr=args.lr, weight_decay=args.wd)
-    activations = []
-    print('========= 01 ===========')
+    optimizer = torch.optim.AdamW(server_model.parameters(), lr=args.lr, weight_decay=args.wd)
+
+
     for epoch in range(no_of_epochs):
+        
         for batch_pointer in range(math.ceil(n_train_samples/batchsize)):        
             activations = []
-            for client_name, client in clients.items():    
+
+            for (client_name, client) in clients.items():            
                 client_model = client.get('model')
                 dataloader = client.get('dataloader')
+
+                
                 cont_x, cat_x = dataloader.dataset[batch_pointer * batchsize:(batch_pointer +1) * batchsize]
                 client_model.train()
-                client_model.zero_grad()
-
+                client.get('optimizer').zero_grad()
+                
                 cat_x = torch.from_numpy(cat_x).to(device)
                 cont_x = torch.from_numpy(cont_x).to(device)
                 activation = client_model(cont_x, cat_x)
-
+                
                 activations.append(activation)
 
             # Combine activations and pass it to the server_model
             optimizer.zero_grad()
-            
+
             if(server_nn_type == 'stack'):
                 server_inputs = torch.cat(activations, dim=1).detach().clone()
             else:
                 server_inputs = torch.mean(torch.stack(activations), dim=0).detach().clone()
-            
+
             server_inputs = Variable(server_inputs, requires_grad=True)
             outputs = server_model(server_inputs)
-            
+
             labels = training_labels[batch_pointer * batchsize:(batch_pointer +1) * batchsize]
             labels = labels.to(device)
             loss = criterion(outputs, labels)            
+            
             loss.backward()
             optimizer.step()
             prev_pointer = 0
-            for activation, nn_partition, (client_name, client) in zip(activations, client_net_ln_map, clients.items()):
+            for activation, (client_name, client) in zip(activations, clients.items()):
+                nn_partition = client.get('ln_dim')
+
                 if(server_nn_type == 'stack'):
                     activation.backward(server_inputs.grad[:,prev_pointer:nn_partition + prev_pointer])
                 else:
