@@ -150,7 +150,7 @@ if __name__ == "__main__":
     args.agg_type = 'stack' if int(agg_type) == 0 else 'average'
     args.ln_upscale = int(ln_upscale)
 
-    args.desc = 'All hyperparameters are fixed except cut layer and partition alpha. One dataset (80 run).'
+    args.desc = 'All hyperparameters are fixed except partition alpha. One dataset (500 run).'
     args.dataset_index_id = int(db_id)
     dataset_index_id = args.dataset_index_id
     (_, dataset_id) = cc18[dataset_index_id]
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_15',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_17',
         config=args
     )
 
