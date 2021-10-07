@@ -133,7 +133,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Read config file and append configs to args parser
-    df = pd.read_csv('./run-configs/SL_ALL_FIXED_CUTLAYER_PA.csv')
+    df = pd.read_csv('./run-configs/SL_ALL_FIXED_PA_CLIENT.csv')
 
     partition_alpha,batch_size,lr,wd,epochs,client_num_in_total,cut_layer,num_ln,agg_type,ln_upscale,random_seed,db_id,config_id = list(df.iloc[args.config_id])
     args.config_id = config_id
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     args.agg_type = 'stack' if int(agg_type) == 0 else 'average'
     args.ln_upscale = int(ln_upscale)
 
-    args.desc = 'All hyperparameters are fixed except partition alpha. One dataset (500 run).'
+    args.desc = 'All hyperparameters are fixed except partition alpha and number of clients. One dataset (325 runs). Seed is varying.'
     args.dataset_index_id = int(db_id)
     dataset_index_id = args.dataset_index_id
     (_, dataset_id) = cc18[dataset_index_id]
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_17',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_18',
         config=args
     )
 
@@ -188,7 +188,10 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
 
 
-    openml_dataset = openml.datasets.get_dataset(dataset_id)
+    openml_dataset = openml.datasets.get_dataset(
+        dataset_id, 
+        download_data=False # Do not download the dataset.
+        )
 
     target_label = openml_dataset.default_target_attribute
     ignore_attributes = openml_dataset.ignore_attribute or []
@@ -201,8 +204,9 @@ if __name__ == "__main__":
 
     categorical_features.append(target_label)
 
-    df = openml_dataset.get_data()[0]
-    complete_df = openml_dataset.get_data()[0]
+    df = pd.read_csv('./40966.csv')
+    # df = openml_dataset.get_data()[0]
+    complete_df = pd.read_csv('./40966.csv')
 
 
     columns = list(df.columns)
