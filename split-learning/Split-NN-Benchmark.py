@@ -34,6 +34,7 @@ from sklearn import datasets
 # num_features, datasetid
 cc18 = [
     # (82, 40966),
+    (20, 40984),
     (1777, 4134),
     # (1559, 40978),
     # (618, 300),
@@ -133,7 +134,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Read config file and append configs to args parser
-    df = pd.read_csv('./run-configs/SL_ALL_VARIENT_A22.csv')
+    df = pd.read_csv('./run-configs/SL_ALL_VARIENT_A23.csv')
 
     partition_alpha,batch_size,lr,wd,epochs,client_num_in_total,cut_layer,num_ln,agg_type,ln_upscale,random_seed,db_id,config_id = list(df.iloc[args.config_id])
     args.config_id = config_id
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     args.agg_type = 'stack' if int(agg_type) == 0 else 'average'
     args.ln_upscale = int(ln_upscale)
 
-    args.desc = 'All varient. nLn fixed. Aggregation check. 8 datasets (600 runs). Seed is fixed.'
+    args.desc = 'All varient. nLn fixed. Aggregation check. 1 datasets (200 runs). Seed is fixed.'
     args.dataset_index_id = int(db_id)
     dataset_index_id = args.dataset_index_id
     (_, dataset_id) = cc18[dataset_index_id]
@@ -177,7 +178,7 @@ if __name__ == "__main__":
     print(' GPU =========================== ', torch.cuda.is_available())
     wandb.init(
         project="fedml",
-        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_22',
+        name=args.run_name + '_Config_' + str(args.config_id) + '_DS_' + str(args.dataset_id) + '_Alice_23',
         config=args
     )
 
